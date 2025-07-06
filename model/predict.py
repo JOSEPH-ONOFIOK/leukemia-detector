@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 
-model = tf.keras.models.load_model("model/model.h5")
+model = tf.keras.models.load_model("model/model.keras")
 classes = ['ALL', 'AML', 'CLL', 'CML', 'Healthy']
 
 def preprocess_image(img):
