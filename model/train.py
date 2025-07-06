@@ -10,7 +10,6 @@ Dense = tf.keras.layers.Dense
 GlobalAveragePooling2D = tf.keras.layers.GlobalAveragePooling2D
 Adam = tf.keras.optimizers.Adam
 EarlyStopping = tf.keras.callbacks.EarlyStopping
-CategoricalCrossentropy = tf.keras.losses.CategoricalCrossentropy
 
 def build_model(num_classes):
     base_model = EfficientNetB0(include_top=False, input_shape=(224, 224, 3), weights='imagenet')
@@ -22,13 +21,12 @@ def build_model(num_classes):
     output = Dense(num_classes, activation='softmax')(x)
     model = Model(inputs=base_model.input, outputs=output)
 
-    loss = CategoricalCrossentropy(label_smoothing=0.1)
-    model.compile(optimizer=Adam(learning_rate=1e-6), loss=loss, metrics=['accuracy'])
+    model.compile(optimizer=Adam(learning_rate=1e-6), loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 
-def train_model(data_dir='data', output_path='model/model.keras', epochs=50):
+def train_model(data_dir='data', output_path='model/model.h5', epochs=50):
     if not os.path.exists(data_dir) or not os.listdir(data_dir):
-        raise FileNotFoundError(f"No data found in '{data_dir}'. Please ensure class folders exist.")
+        raise FileNotFoundError(f"No data found in '{data_dir}'.")
 
     datagen = ImageDataGenerator(
         rescale=1./255,
@@ -74,7 +72,7 @@ def train_model(data_dir='data', output_path='model/model.keras', epochs=50):
 
     callbacks = [EarlyStopping(patience=10, restore_best_weights=True)]
 
-    print("Starting enhanced training...\n")
+    print("🚀 Starting training...\n")
     model.fit(
         train_generator,
         validation_data=val_generator,
@@ -85,7 +83,7 @@ def train_model(data_dir='data', output_path='model/model.keras', epochs=50):
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     model.save(output_path)
-    print(f"\n Model saved to: {output_path}")
+    print(f"\n✅ Model saved to: {output_path}")
 
 if __name__ == "__main__":
     train_model()
