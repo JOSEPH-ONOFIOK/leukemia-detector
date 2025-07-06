@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Environment
+venv/
+.env
+.env.*
+
+# Jupyter
+.ipynb_checkpoints
+
+# Data (Exclude image datasets)
+data/
+*.csv
+*.h5
+*.keras
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Logs and caches
+*.log
+.cache/
+*.bak
+*.swp
+
+# VSCode and IDE settings
+.vscode/
+.idea/
+
+# Streamlit
+.streamlit/config.toml
