@@ -59,7 +59,7 @@ def train_model(data_dir='data', output_path='model/model.h5', epochs=50):
     )
 
     class_labels = list(train_generator.class_indices.keys())
-    print(f"\n🧠 Classes detected: {class_labels}")
+    print(f"\nClasses detected: {class_labels}")
 
     class_weights = class_weight.compute_class_weight(
         class_weight='balanced',
@@ -72,7 +72,7 @@ def train_model(data_dir='data', output_path='model/model.h5', epochs=50):
 
     callbacks = [EarlyStopping(patience=10, restore_best_weights=True)]
 
-    print("🚀 Starting training...\n")
+    print("Starting training...\n")
     model.fit(
         train_generator,
         validation_data=val_generator,
@@ -83,7 +83,7 @@ def train_model(data_dir='data', output_path='model/model.h5', epochs=50):
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     model.save(output_path)
-    print(f"\n✅ Model saved to: {output_path}")
+    print(f"\nModel saved to: {output_path}")
 
 if __name__ == "__main__":
     train_model()
