@@ -90,4 +90,4 @@ model.fit(
 
 # Save
 model.save(model_path)
-print(f"\n✅ Model saved to: {model_path}")
+print(f"\n  Model saved to: {model_path}")
