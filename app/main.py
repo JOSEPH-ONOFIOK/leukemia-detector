@@ -14,7 +14,6 @@ if ROOT_DIR not in sys.path:
 
 # Import models
 from model.predict import classify_image, classes
-from model.evaluate import get_classification_report
 
 # Page config
 st.set_page_config(page_title="Leukemia Detection Dashboard", layout="wide")
@@ -97,7 +96,7 @@ st.markdown("""
 
 # Sidebar
 st.sidebar.title("Leukemia Detection Tool")
-page = st.sidebar.radio("Navigate", ["Dashboard", "Upload & Predict", "Model Evaluation", "About"])
+page = st.sidebar.radio("Navigate", ["Dashboard", "Upload & Predict", "About"])
 
 # Dashboard page
 if page == "Dashboard":
@@ -217,15 +216,7 @@ elif page == "Upload & Predict":
                         mime="application/pdf"
                     )
     else:
-      st.markdown("<div style='color: red; font-weight: bold;'>Please complete all patient fields before uploading an image.</div>", unsafe_allow_html=True)
-
-
-# Model Evaluation Page
-elif page == "Model Evaluation":
-    st.markdown('<div class="main-title">Model Evaluation Report</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-title">Review classification performance metrics on the validation dataset.</div>', unsafe_allow_html=True)
-    report = get_classification_report()
-    st.text_area("Classification Report", report, height=400)
+        st.markdown("<div style='color: red; font-weight: bold;'>Please complete all patient fields before uploading an image.</div>", unsafe_allow_html=True)
 
 # About Page
 elif page == "About":
