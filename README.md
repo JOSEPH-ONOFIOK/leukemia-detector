@@ -29,19 +29,6 @@ Tech Stack
 - Seaborn– Confusion matrix heatmap
 
 
-Folder structure
-Leukemia-detector/
-├── app.py # Streamlit interface
-├── model/
-│ └── model.keras # Trained model
-├── utils/
-│ ├── evaluate.py # Evaluation script
-│ ├── gan.py # GAN image generator
-│ └── gradcam.py # Grad-CAM logic
-├── test_samples/
-│ └── sample.jpg # For test suite
-├── requirements.txt # Dependencies
-└── README.md # You are here
 
 
 Installation
