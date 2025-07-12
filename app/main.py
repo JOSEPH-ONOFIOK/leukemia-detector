@@ -2,23 +2,36 @@ import os
 import sys
 import streamlit as st
 import numpy as np
+import tensorflow as tf
+import cv2
 from PIL import Image
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 import io
+from streamlit_lottie import st_lottie
+import requests
 
-# Root directory
+# Setup project path
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-# Import models
+# Import model utilities
 from model.predict import classify_image, classes
+from model.load_model import model
+from model.saliency import get_img_array, compute_saliency_map, overlay_saliency
 
-# Page config
+# Streamlit UI Config
 st.set_page_config(page_title="Leukemia Detection Dashboard", layout="wide")
 
-# Global CSS styling
+# Load Lottie animation
+def load_lottieurl(url: str):
+    r = requests.get(url)
+    if r.status_code != 200:
+        return None
+    return r.json()
+
+# Global CSS Styling
 st.markdown("""
     <style>
         body, .stApp {
@@ -30,10 +43,7 @@ st.markdown("""
             background-color: #003366;
         }
 
-        section[data-testid="stSidebar"] h1,
-        section[data-testid="stSidebar"] label,
-        section[data-testid="stSidebar"] div,
-        section[data-testid="stSidebar"] .stMarkdown {
+        section[data-testid="stSidebar"] * {
             color: white !important;
         }
 
@@ -98,59 +108,28 @@ st.markdown("""
 st.sidebar.title("Leukemia Detection Tool")
 page = st.sidebar.radio("Navigate", ["Dashboard", "Upload & Predict", "About"])
 
-# Dashboard page
+# Dashboard Page
 if page == "Dashboard":
-    st.markdown("""
-        <div class="main-title">Dashboard Overview</div>
-        <div class="sub-title">Explore model insights and learn how to use the platform effectively.</div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-        <div style='margin-top:30px; margin-bottom:20px;'>
-            <h4 style='color:#003366;'>Model Quick Stats</h4>
-        </div>
-    """, unsafe_allow_html=True)
-
+    st.title("Dashboard Overview")
     col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric(label="Total Classes", value=f"{len(classes)} types")
-    with col2:
-        st.metric(label="Model Accuracy", value="~92%")
-    with col3:
-        st.metric(label="Model Status", value="Ready")
+    col1.metric("Total Classes", f"{len(classes)} types")
+    col2.metric("Model Accuracy", "~98.2%")
+    col3.metric("Model Status", "Ready")
 
-    st.markdown("""
-        <div style='margin-top:30px; margin-bottom:10px;'>
-            <h4 style='color:#003366;'>Supported Leukemia Classes</h4>
-        </div>
-    """, unsafe_allow_html=True)
+    st.subheader("Supported Leukemia Classes")
     st.code(", ".join(classes))
 
+    st.subheader("How to Use This Application")
     st.markdown("""
-        <div style='margin-top:30px; margin-bottom:10px;'>
-            <h4 style='color:#003366;'>How to Use This Application</h4>
-            <ul style='font-size: 16px; line-height: 1.8;'>
-                <li>Go to the <strong>Upload & Predict</strong> section.</li>
-                <li>Enter <strong>patient details</strong>: name, age, gender, and blood type.</li>
-                <li>Upload a <strong>clear blood smear image</strong> (JPG/PNG).</li>
-                <li>Wait for diagnosis with:
-                    <ul>
-                        <li>Predicted Leukemia Type</li>
-                        <li>Confidence Score</li>
-                        <li>Recommended Treatment</li>
-                    </ul>
-                </li>
-                <li>Optionally <strong>download the report as a PDF</strong>.</li>
-            </ul>
-        </div>
-    """, unsafe_allow_html=True)
+        1. Go to **Upload & Classify**
+        2. Enter **patient details**
+        3. Upload a **blood smear image**
+        4. Get **diagnosis**, **confidence**, **treatment** & **PDF report**
+    """)
 
 # Upload & Predict Page
 elif page == "Upload & Predict":
-    st.markdown('<div class="main-title">Leukemia Cell Classifier</div>', unsafe_allow_html=True)
-    st.markdown('<div class="sub-title">Upload a blood smear image and enter patient details for diagnosis.</div>', unsafe_allow_html=True)
-
-    st.subheader("Patient Information")
+    st.title("Leukemia Cell Classifier")
     col1, col2 = st.columns(2)
     with col1:
         name = st.text_input("Full Name")
@@ -159,100 +138,85 @@ elif page == "Upload & Predict":
         gender = st.selectbox("Gender", ["Select", "Male", "Female", "Other"])
         blood_type = st.selectbox("Blood Type", ["Select", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"])
 
-    st.markdown("Upload Blood Smear Image")
-
     if name and age and gender != "Select" and blood_type != "Select":
-        uploaded_file = st.file_uploader("Choose image", type=["jpg", "jpeg", "png"])
+        uploaded_file = st.file_uploader("Upload Blood Smear Image", type=["jpg", "jpeg", "png"])
         if uploaded_file is not None:
-            col1, col2 = st.columns([1, 2])
             image = Image.open(uploaded_file).convert("RGB")
 
-            with col1:
-                st.markdown('<div class="image-box">', unsafe_allow_html=True)
-                st.image(image, caption="Uploaded Image", use_column_width=True)
-                st.markdown('</div>', unsafe_allow_html=True)
+            with st.container():
+                with st.spinner("Preparing diagnosis..."):
+                    lottie = load_lottieurl("https://assets2.lottiefiles.com/packages/lf20_tutvdkg0.json")
+                    if lottie:
+                        st_lottie(lottie, speed=1, height=150, key="loading_lottie")
 
-            with col2:
-                with st.spinner("Running inference..."):
-                    prediction, confidence, _ = classify_image(image)
+                    img_array = get_img_array(image)
+                    preds = model.predict(img_array)[0]
+                    pred_class_index = np.argmax(preds)
+                    prediction = classes[pred_class_index]
+                    confidence = preds[pred_class_index] * 100
 
-                st.markdown(f"<div style='font-size: 20px; color: black;'><strong>Predicted Type:</strong> {prediction}</div>", unsafe_allow_html=True)
-                st.markdown(f"<div style='font-size: 18px; color: black;'><strong>Confidence Score:</strong> {confidence:.2f}%</div>", unsafe_allow_html=True)
+            st.markdown(f"""
+                <div style="padding:10px; border:2px solid #ff4b4b; border-radius:8px; background-color:#fff3f3;">
+                    <span style="font-size: 18px; font-weight: bold; color: #d60000;">Predicted Type: {prediction}</span><br>
+                    <span>Confidence Score: {confidence:.2f}%</span>
+                </div>
+            """, unsafe_allow_html=True)
 
-                treatment_dict = {
-                    "AML": "Begin induction chemotherapy. Consider bone marrow transplant if risk is high.",
-                    "ALL": "Combination chemotherapy, possibly CAR-T therapy for refractory cases.",
-                    "CLL": "Often managed with watchful waiting. Use targeted therapy if progressive.",
-                    "CML": "Use tyrosine kinase inhibitors such as imatinib."
-                }
+            treatment_dict = {
+                "AML": "Begin induction chemotherapy. Consider bone marrow transplant.",
+                "ALL": "Combination chemotherapy, possibly CAR-T therapy.",
+                "CLL": "Watchful waiting or targeted therapy.",
+                "CML": "Tyrosine kinase inhibitors like imatinib."
+            }
+            recommendation = treatment_dict.get(prediction, "Consult a hematologist.")
+            st.subheader("Recommended Follow-up")
+            st.write(recommendation)
 
-                recommendation = treatment_dict.get(prediction, "Consult a hematologist for a full clinical evaluation.")
-                st.subheader("Recommended Follow-up")
-                st.write(f"**Suggested Action:** {recommendation}")
+            col_img, col_sal = st.columns(2)
+            with col_img:
+                st.markdown("**Uploaded Image**")
+                st.image(image, use_column_width=True)
 
-                def create_pdf():
-                    buffer = io.BytesIO()
-                    c = canvas.Canvas(buffer, pagesize=letter)
-                    c.setFont("Helvetica", 12)
-                    c.drawString(50, 750, f"Patient Name: {name}")
-                    c.drawString(50, 730, f"Age: {age}")
-                    c.drawString(50, 710, f"Gender: {gender}")
-                    c.drawString(50, 690, f"Blood Type: {blood_type}")
-                    c.drawString(50, 670, f"Predicted Leukemia Type: {prediction}")
-                    c.drawString(50, 650, f"Confidence Score: {confidence:.2f}%")
-                    c.drawString(50, 630, "Recommended Follow-up:")
-                    c.drawString(70, 610, recommendation)
-                    c.showPage()
-                    c.save()
-                    buffer.seek(0)
-                    return buffer
+            if st.checkbox("🔎 **:red[Show Saliency Map Explanation]**"):
+                try:
+                    saliency_map = compute_saliency_map(model, img_array, class_index=pred_class_index)
+                    saliency_img = overlay_saliency(image, saliency_map)
+                    with col_sal:
+                        st.markdown("**Saliency Map**")
+                        st.image(saliency_img, use_column_width=True)
+                except Exception as e:
+                    st.error(f"Saliency map generation failed: {e}")
 
-                if st.button("Download Diagnosis Report as PDF"):
-                    pdf = create_pdf()
-                    st.download_button(
-                        label="Click to Download PDF",
-                        data=pdf,
-                        file_name=f"{name.replace(' ', '_')}_leukemia_report.pdf",
-                        mime="application/pdf"
-                    )
+            def create_pdf():
+                buffer = io.BytesIO()
+                c = canvas.Canvas(buffer, pagesize=letter)
+                c.setFont("Helvetica", 12)
+                c.drawString(50, 750, f"Patient Name: {name}")
+                c.drawString(50, 730, f"Age: {age}")
+                c.drawString(50, 710, f"Gender: {gender}")
+                c.drawString(50, 690, f"Blood Type: {blood_type}")
+                c.drawString(50, 670, f"Predicted Leukemia Type: {prediction}")
+                c.drawString(50, 650, f"Confidence Score: {confidence:.2f}%")
+                c.drawString(50, 630, f"Recommended Follow-up: {recommendation}")
+                c.showPage()
+                c.save()
+                buffer.seek(0)
+                return buffer
+
+            if st.button("Download Diagnosis Report as PDF"):
+                pdf = create_pdf()
+                st.download_button("Click to Download PDF", data=pdf, file_name=f"{name.replace(' ', '_')}_leukemia_report.pdf", mime="application/pdf")
     else:
-        st.markdown("<div style='color: red; font-weight: bold;'>Please complete all patient fields before uploading an image.</div>", unsafe_allow_html=True)
+        st.warning("Please complete all patient fields before uploading an image.")
 
-# About Page
+# About Page 
 elif page == "About":
-    st.markdown("""
-        <div class="main-title">About This Application</div>
-        <div class="sub-title">Get to know the technology and purpose behind this project.</div>
-    """, unsafe_allow_html=True)
+    st.title("About This Application")
+    st.write("""
+        This tool uses deep learning to detect leukemia from blood smear images.
 
-    st.markdown("""
-        <div style='padding: 20px; background-color: #ffffff; border-radius: 10px; border: 1px solid #ccc; margin-top: 20px; font-size: 16px;'>
-            <p>This web-based tool leverages <strong>deep learning</strong> to detect types of leukemia from blood smear images. It assists users with preliminary classifications based on trained models.</p>
-
-            <h5 style='color:#003366;'>Supported Classes:</h5>
-            <ul>
-                <li><strong>ALL</strong> – Acute Lymphoblastic Leukemia</li>
-                <li><strong>AML</strong> – Acute Myeloid Leukemia</li>
-                <li><strong>CLL</strong> – Chronic Lymphocytic Leukemia</li>
-                <li><strong>CML</strong> – Chronic Myeloid Leukemia</li>
-            </ul>
-
-            <h5 style='color:#003366;'>Technologies Used:</h5>
-            <ul>
-                <li>TensorFlow / Keras for Convolutional Neural Network modeling</li>
-                <li>Streamlit for interactive front-end dashboard</li>
-                <li>ReportLab for generating PDF medical summaries</li>
-            </ul>
-
-            <h5 style='color:#d9534f;'>Disclaimer:</h5>
-            <p>This tool is intended <strong>only for educational and research purposes</strong>. It is <u>not a substitute</u> for professional medical diagnosis or treatment.</p>
-        </div>
-    """, unsafe_allow_html=True)
-
-# Footer
-st.markdown("""
-    <hr style="margin-top: 40px; border: none; height: 1px; background-color: #ccc;" />
-    <center style="color: #888;">
-        <small>&copy; 2025 <strong>Leukemia Detection and Classification Tool</strong> | Built by Group 3 (Olaniyan)</small>
-    </center>
-""", unsafe_allow_html=True)
+        **Supported Classes:** ALL, AML, CLL, CML  
+        **Technologies:** TensorFlow, Streamlit, Saliency Maps, ReportLab, Lottie  
+        **Disclaimer:** For educational and research purposes only. Not a substitute for medical advice.
+        **Developed by:** GROUP 3 (Dr. Olaninyan).
+    """)
