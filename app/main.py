@@ -11,27 +11,27 @@ import io
 from streamlit_lottie import st_lottie
 import requests
 
-# Setup project path
+# ✅ Setup project path (so 'model' directory is recognized)
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-# Import model utilities
+# ✅ Import model utilities
 from model.predict import classify_image, classes
 from model.load_model import model
 from model.saliency import get_img_array, compute_saliency_map, overlay_saliency
 
-# Streamlit UI Config
+# ✅ Streamlit UI Config
 st.set_page_config(page_title="Leukemia Detection Dashboard", layout="wide")
 
-# Load Lottie animation
+# ✅ Load Lottie animation
 def load_lottieurl(url: str):
     r = requests.get(url)
     if r.status_code != 200:
         return None
     return r.json()
 
-# Global CSS Styling
+# ✅ Global CSS Styling
 st.markdown("""
     <style>
         body, .stApp {
@@ -104,11 +104,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Sidebar
+# ✅ Sidebar Navigation
 st.sidebar.title("Leukemia Detection Tool")
 page = st.sidebar.radio("Navigate", ["Dashboard", "Upload & Predict", "About"])
 
-# Dashboard Page
+# ✅ Dashboard Page
 if page == "Dashboard":
     st.title("Dashboard Overview")
     col1, col2, col3 = st.columns(3)
@@ -121,13 +121,13 @@ if page == "Dashboard":
 
     st.subheader("How to Use This Application")
     st.markdown("""
-        1. Go to **Upload & Classify**
-        2. Enter **patient details**
-        3. Upload a **blood smear image**
+        1. Go to **Upload & Predict**  
+        2. Enter **patient details**  
+        3. Upload a **blood smear image**  
         4. Get **diagnosis**, **confidence**, **treatment** & **PDF report**
     """)
 
-# Upload & Predict Page
+# ✅ Upload & Predict Page
 elif page == "Upload & Predict":
     st.title("Leukemia Cell Classifier")
     col1, col2 = st.columns(2)
@@ -209,7 +209,7 @@ elif page == "Upload & Predict":
     else:
         st.warning("Please complete all patient fields before uploading an image.")
 
-# About Page 
+# ✅ About Page
 elif page == "About":
     st.title("About This Application")
     st.write("""
@@ -217,6 +217,6 @@ elif page == "About":
 
         **Supported Classes:** ALL, AML, CLL, CML  
         **Technologies:** TensorFlow, Streamlit, Saliency Maps, ReportLab, Lottie  
-        **Disclaimer:** For educational and research purposes only. Not a substitute for medical advice.
-        **Developed by:** GROUP 3 (Dr. Olaninyan).
+        **Disclaimer:** For educational and research purposes only. Not a substitute for medical advice.  
+        **Developed by:** GROUP 3 (Dr. Olaninyan)
     """)
