@@ -113,7 +113,6 @@ if page == "Dashboard":
     st.title("Dashboard Overview")
     col1, col2, col3 = st.columns(3)
     col1.metric("Total Classes", f"{len(classes)} types")
-    col2.metric("Model Accuracy", "~98.2%")
     col3.metric("Model Status", "Ready")
 
     st.subheader("Supported Leukemia Classes")
