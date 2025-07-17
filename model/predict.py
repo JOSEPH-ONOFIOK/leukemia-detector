@@ -14,8 +14,8 @@ model = load_model(MODEL_PATH)
 # Force model to build by calling it once with dummy data
 model(tf.zeros((1, 224, 224, 3)))
 
-# Define class names
-classes = ['ALL', 'AML', 'CLL', 'CML']
+# class names
+classes = ['ALL', 'AML', 'CLL', 'CML','Healthy']
 
 # Image size
 IMG_SIZE = 224
