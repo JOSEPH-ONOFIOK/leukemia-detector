@@ -11,12 +11,12 @@ import io
 from streamlit_lottie import st_lottie
 import requests
 
-# Setup project path (so 'model' directory is recognized)
+# Setup project path
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-# Import model utilities
+#  Import model utilities
 from model.predict import classify_image, classes
 from model.load_model import model
 from model.saliency import get_img_array, compute_saliency_map, overlay_saliency
@@ -31,7 +31,7 @@ def load_lottieurl(url: str):
         return None
     return r.json()
 
-# Global CSS Styling
+# Global CSS Styling 
 st.markdown("""
     <style>
         body, .stApp {
@@ -104,12 +104,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Sidebar Navigation
+# Sidebar
 st.sidebar.title("Leukemia Detection Tool")
-page = st.sidebar.radio("Navigate", ["Dashboard", "Upload & Predict", "About"])
+page = st.sidebar.radio("Navigate", ["Home", "Upload & Predict", "About"])
 
-# Dashboard Page
-if page == "Dashboard":
+# Home
+if page == "Home":
     st.title("Dashboard Overview")
     col1, col2, col3 = st.columns(3)
     col1.metric("Total Classes", f"{len(classes)} types")
@@ -120,13 +120,13 @@ if page == "Dashboard":
 
     st.subheader("How to Use This Application")
     st.markdown("""
-        1. Go to **Upload & Predict**  
-        2. Enter **patient details**  
-        3. Upload a **blood smear image**  
+        1. Go to **Upload & Classify**
+        2. Enter **patient details**
+        3. Upload a **blood smear image**
         4. Get **diagnosis**, **confidence**, **treatment** & **PDF report**
     """)
 
-# Upload & Predict Page
+# Upload & Predict Page 
 elif page == "Upload & Predict":
     st.title("Leukemia Cell Classifier")
     col1, col2 = st.columns(2)
@@ -176,7 +176,7 @@ elif page == "Upload & Predict":
                 st.markdown("**Uploaded Image**")
                 st.image(image, use_column_width=True)
 
-            if st.checkbox("**:red[Show Saliency Map Explanation]**"):
+            if st.checkbox(" **:red[Show Saliency Map Explanation]**"):
                 try:
                     saliency_map = compute_saliency_map(model, img_array, class_index=pred_class_index)
                     saliency_img = overlay_saliency(image, saliency_map)
@@ -216,6 +216,6 @@ elif page == "About":
 
         **Supported Classes:** ALL, AML, CLL, CML  
         **Technologies:** TensorFlow, Streamlit, Saliency Maps, ReportLab, Lottie  
-        **Disclaimer:** For educational and research purposes only. Not a substitute for medical advice.  
-        **Developed by:** GROUP 3 (Dr. Olaninyan)
+        **Disclaimer:** For educational and research purposes only. Not a substitute for medical advice.
+        **Developed by:** GROUP 3, Dr.(Mrs) Olaninyan.
     """)
